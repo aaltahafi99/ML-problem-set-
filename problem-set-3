@@ -1,0 +1,312 @@
+---
+title: "problem set 3"
+author: "Ali Altahafi"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+work on chapter 5: problem 5 and 9
+chapter 6: problem 8
+##Question 5
+#problem a
+```{r}
+set.seed(33)
+library(ISLR2)
+attach(Default)
+fit.glm <- glm(default ~ income + balance, data = Default, family = "binomial")
+summary(fit.glm)
+```
+```{r}
+library(ISLR)
+attach(Default)
+set.seed(1)
+fit.glm <- glm(default ~ income + balance, data = Default, family = "binomial")
+summary(fit.glm)
+```
+#problem b
+```{r}
+ 
+#answer i 
+train <- sample(dim.data.frame(Default)[1],dim.data.frame(Default)[1]/2)
+#answer ii
+train_LR.glm<- glm(default ~ income + balance, data = Default, family = "binomial", subset = train)
+summary(train_LR.glm)
+#answer iii
+prob <- predict(train_LR.glm, newdata = Default[-train,], type = "response")
+pred_LR <- rep("No", length(prob))
+pred_LR[prob > 0.5] <- "Yes"
+#answer iv
+mean(pred_LR != Default[-train,]$default)
+```
+the validation error is .025 or 25%. this means 25% of the observation are misclassified 
+#problem c
+```{r}
+#i dont know what is wrong with my code 
+train <- sample(dim.data.frame(Default)[1],dim.data.frame(Default)[1]/2)
+train_LR.glm<- glm(default ~ income + balance, data = Default, family = "binomial", subset = train)
+summary(train_LR.glm)
+prob <- predict(train_LR.glm, newdata = Default[-train,], type = "response")
+pred_LR.glm <- rep("No", length(prob))
+pred_LR.glm[prob > .5] = "Yes"
+table(pred_LR.glm, Default[-train, ]$default)
+mean(pred_LR.glm != Default[-train, ]$default)
+```
+this split gives me .026, a higher validation error
+#problem d
+```{r}
+set.seed(69)
+train <- sample(dim.data.frame(Default)[1],dim.data.frame(Default)[1]/2)
+train_LR.glm<- glm(default ~ income + balance + student, data = Default, family = "binomial", subset = train) 
+summary(train_LR.glm)
+summary(
+  prob <- predict(train_LR.glm, newdata = Default[-train,], type = "response"))
+summary(
+  pred_LR.glm <- rep("No", length(prob)))
+summary(
+  pred_LR.glm[prob > .5] <- "Yes") 
+table(pred_LR.glm, Default[-train, ]$default)
+mean(pred_LR.glm != Default[-train, ]$default) 
+```
+it does not lead to a reduction despite being statistically significant. I suspect the validation error woudl be the same. 
+##Question 9 
+#problem a
+```{r}
+library(ISLR2)
+data('Boston')
+library(MASS)
+mu_hat <- mean(Boston$medv)
+summary(mu_hat)
+mean(Boston$medv)
+```
+#problem b
+```{r}
+nrow(Boston)
+sqrt(var(Boston$medv)/506)
+```
+the standard error is .4088, that is low right? that the estimated mu is close to the true mu. 
+#problem c
+```{r}
+set.seed(69)
+library(boot)
+mu_hat.se <- function(data, index) {
+  mu<- mean(data[index])
+  return(mu)
+}
+mu.boot<- boot(Boston$medv, mu_hat.se, 1000)
+mu.boot
+```
+standard error is higher, .41153. its farther from the true mean. 
+#problem d
+```{r}
+pred_mu<- mu.boot$t0
+pred_se<- sd(mu.boot$t)
+CI <- c(pred_mu-2*pred_se, pred_mu+2*pred_se)
+CI
+t.test(Boston$medv)
+```
+the t-test is a marginal difference.
+#problem e 
+```{r}
+pred_med <- median(Boston$medv)
+pred_med
+```
+#problem f
+```{r}
+set.seed(69)
+library(boot)
+med_hat <- function(data, index) {
+  med<- median(data[index])
+  return(med)
+}
+med_hat.boot<- boot(Boston$medv, med_hat, 1000)
+med_hat.boot
+```
+the SE of median of Mu hat is .3817.this tells us that this medthod gets us close to median. compared to mean, the SE is lower when calculating the MEdoian and SE median
+#problem g
+```{r}
+Quant_mu <- quantile(Boston$medv, .1)
+Quant_mu
+```
+#problem h
+```{r}
+set.seed(69)
+library(boot)
+mu.se <- function(data, index) {
+  mu.quant<- quantile(data[index], c(.1))
+  return(mu.quant)
+}
+mu_quant.se<- boot(Boston$medv, mu.se, 1000)
+mu_quant.se
+```
+the SE is higher for the 10th quantile is higher. so the 10th percentile of the median is far from the true 10th percent median. 
+##Question 8 on chapter 6 
+#problem a
+```{r}
+library(ISLR2)
+set.seed(7)
+n <- 100
+head(n)
+x <- rnorm(n)
+head(x)
+ep <- rnorm(n)
+head(ep)
+```
+#problem b
+```{r}
+set.seed(7)
+b0 <- rnorm(1)
+b1 <- rnorm(1)
+b2 <- rnorm(1)
+b3 <- rnorm(1)
+y <- b0 + b1 * x + b2 * x^2 + b3 * x^3 + ep
+head(y)
+```
+#problem c
+```{r}
+library(leaps)
+x <- matrix(rnorm(n*10), ncol = 10)
+b <- c(1,2,3,4,5,6,7,18,9,10)
+Y <- x %*% b + rnorm(n)
+data.set <- data.frame( y , x )
+regfit.full <- regsubsets( y ~ ., data = data.set, nvmax = 10)
+summary(regfit.full)
+regfit.summary <- summary(regfit.full)
+```
+```{r}
+
+#plot model Cpvalue for different number of variables.Least value of c_p gives best model
+plot(regfit.summary$cp,xlab="Number of Variables",ylab="Cp",type="l")
+points(which.min(regfit.summary$cp),regfit.summary$cp[which.min(regfit.summary$cp)],col="red",cex=2,pch=20)
+
+#plot model BIC value
+plot(regfit.summary$bic,xlab="Number of Variables",ylab="BIC",type="l")
+points(which.min(regfit.summary$bic),regfit.summary$bic[which.min(regfit.summary$bic)],col="red",cex=2,pch=20)
+
+#plot model adj R square. Higher adj r sqaure = best model
+plot(regfit.summary$adjr2,xlab="Number of Variables",ylab="Adj R^2",type="l")
+points(which.max(regfit.summary$adjr2),regfit.summary$adjr2[which.max(regfit.summary$adjr2)],col="red",cex=2,pch=20)
+```
+ADjusted R^2 thats us a that the independent variables have a postive variability. this tell us that the modet fits well. BIC is very low, telling us that it is a good fit and a good model. Cp tells us the same as BIC 
+#problem d
+```{r}
+library(leaps)
+x <- matrix(rnorm(n*10), ncol = 10)
+b <- c(1,2,3,4,5,6,7,18,9,10)
+Y <- x %*% b + rnorm(n)
+data.set <- data.frame( y , x )
+regfwd.full <- regsubsets( y ~ ., data = data.set, nvmax = 10, method = "forward")
+summary(regfit.full)
+regfwd.summary <- summary(regfwd.full)
+```
+```{r}
+#plot model Cp value for different number of variables.Least value of c_p gives best model
+plot(regfwd.summary$cp,xlab="Number of Variables",ylab="Cp",type="l")
+points(which.min(regfwd.summary$cp),regfwd.summary$cp[which.min(regfwd.summary$cp)],col="red",cex=2,pch=20)
+
+#plot model BIC value
+plot(regfwd.summary$bic,xlab="Number of Variables",ylab="BIC",type="l")
+points(which.min(regfwd.summary$bic),regfwd.summary$bic[which.min(regfwd.summary$bic)],col="red",cex=2,pch=20)
+
+#plot model adj R square. Higher adj r sqaure = best model
+plot(regfwd.summary$adjr2,xlab="Number of Variables",ylab="Adj R^2",type="l")
+points(which.max(regfwd.summary$adjr2),regfwd.summary$adjr2[which.max(regfwd.summary$adjr2)],col="red",cex=2,pch=20)
+```
+it's fascinating. forward tells us that the model fits less well and optimal is with higher variables. 
+now, let us try backward selection 
+```{r}
+library(leaps)
+x <- matrix(rnorm(n*10), ncol = 10)
+b <- c(1,2,3,4,5,6,7,18,9,10)
+Y <- x %*% b + rnorm(n)
+data.set <- data.frame( y , x )
+regbwd.full <- regsubsets( y ~ ., data = data.set, nvmax = 10, method = "backward")
+summary(regfit.full)
+regbwd.summary <- summary(regbwd.full)
+```
+```{r}
+#plot model c_p value for different number of variables.Least value of c_p gives best model
+plot(regbwd.summary$cp,xlab="Number of Variables",ylab="C_p",type="l")
+points(which.min(regbwd.summary$cp),regbwd.summary$cp[which.min(regbwd.summary$cp)],col="red",cex=2,pch=20)
+
+#plot model BIC value
+plot(regbwd.summary$bic,xlab="Number of Variables",ylab="BIC",type="l")
+points(which.min(regbwd.summary$bic),regbwd.summary$bic[which.min(regbwd.summary$bic)],col="red",cex=2,pch=20)
+
+#plot model adj R square. Higher adj r sqaure = best model
+plot(regbwd.summary$adjr2,xlab="Number of Variables",ylab="Adj R^2",type="l")
+points(which.max(regbwd.summary$adjr2),regbwd.summary$adjr2[which.max(regbwd.summary$adjr2)],col="red",cex=2,pch=20)
+```
+backward stepwiae selection is a better method to use than forward stepwise. 
+#problem e
+lambda coefficient is .046
+```{r}
+set.seed(7)
+library(glmnet)
+x <- matrix(rnorm(n*10), ncol = 10)
+b <- c(1,2,3,4,5,6,7,18,9,10)
+y <- x %*% b + rnorm(n)
+data.set <- data.frame( y , x )
+neo <- model.matrix(y ~ ., data = data.set)[, -1]
+lasso.cv <- cv.glmnet(neo, y, alpha = 1)
+plot(lasso.cv)
+lambda <- lasso.cv$lambda.min
+lambda
+lasso.fit <- glmnet(neo, y, alpha = 1)
+predict(lasso.fit, s = lambda, type = "coefficients")[1:11, ]
+```
+the penalty is .046 and coefficients are positive while intercept is negative. so all predicators have a positive correlation and staistcially significant. this tells us a good fit. 
+#problem f
+start with best set selection
+```{r}
+set.seed(10)
+X <- rnorm(100)
+e <- rnorm(100)
+Y <- 1 + 8*X^7 + e
+df <- data.frame(y=Y,x=X)
+regfit.full.new <- regsubsets(y ~ poly(x,10), data=df, nvmax = 10 )
+reg.summary.new <- summary(regfit.full.new)
+which.max(reg.summary.new$adjr2)
+which.min(reg.summary.new$cp)
+which.min(reg.summary.new$bic)
+par(mfrow = c(2, 2))
+plot(reg.summary.new$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "l")
+points(8, reg.summary.new$adjr2[8], col = "red", cex = 2,pch = 20)
+plot(reg.summary.new$cp, xlab = "Number of Variables", ylab = "Cp", type = "l")
+points(8, reg.summary.new$cp[8], col = "red", cex = 2, pch = 20)
+plot(reg.summary.new$bic, xlab = "Number of Variables",ylab = "BIC", type = "l")
+points(7, reg.summary.new$bic[7], col = "red", cex = 2, pch = 20)
+```
+Note:
+```{r}
+reg.summary.new
+```
+According to BIC, the 7-variable model is the best.
+lasso model
+```{r}
+set.seed(11)
+X <- model.matrix(y~ poly(x,10), data=df)
+Y <- df$y
+train <- sample(1:nrow(x), nrow(x) / 2)
+test <- (-train)
+y.test <- Y[test]
+grid <- 10^seq(10,-2, length=100)
+lasso.mod <- glmnet (X[train,], Y[train], alpha=1, lambda=grid)
+plot(lasso.mod)
+```
+Cross Validation and Test Error
+```{r}
+set.seed(12)
+cv.out <- cv.glmnet(X[train,], Y[train], alpha=1)
+plot(cv.out)
+bestlam <- cv.out$lambda.min
+bestlam
+lasso.pred <- predict(lasso.mod, s=bestlam, newx = X[test,])
+mean((lasso.pred - y.test)^2)
+```
+Estimating Coefficients
+```{r}
+out <- glmnet(X,Y, alpha=1, lambda=grid)
+lasso.coef <- predict(out, type= "coefficients", s=bestlam)[1:12,]
+lasso.coef
+```
